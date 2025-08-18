@@ -41,6 +41,7 @@ jobs:
         with:
           oidc-provider-name: balajils1
           oidc-audience: balajils1
+          version: 2.77.0
           
       - name: Configure Build
         run: |
