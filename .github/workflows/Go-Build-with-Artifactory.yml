@@ -20,7 +20,7 @@ jobs:
     env:
       JFROG_CLI_BUILD_NAME: 'gostatsd-go'
       JFROG_CLI_BUILD_NUMBER: ${{ github.run_number }}
-      JFROG_CLI_BUILD_PROJECT: ${{ vars.JF_PROJECT }}
+      JFROG_CLI_BUILD_PROJECT: alpha
       JFROG_CLI_LOG_LEVEL: INFO
     runs-on: ubuntu-latest
 
@@ -39,12 +39,12 @@ jobs:
         env:
           JF_URL: https://${{ vars.JF_URL }}/
         with:
-          oidc-provider-name: mikeho-github
-          oidc-audience: mikeho-audience
+          oidc-provider-name: balajils1
+          oidc-audience: balajils1
           
       - name: Configure Build
         run: |
-          jf go-config --repo-resolve=mikeho-gostat-app-go --repo-deploy=mikeho-gostat-app-go-local
+          jf go-config --repo-resolve=alpha-blr-go --repo-deploy=alpha-blr-go-local
           
       - name: JFrog Curation Audit
         run: |
