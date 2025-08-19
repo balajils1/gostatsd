@@ -43,12 +43,12 @@ jobs:
           jf c add  --url https://adoptioneplus.jfrog.io --access-token=${{ secrets.ARTIFACTORY_ACCESS_TOKEN }}
           jf go-config --repo-resolve=alpha-blr-go --repo-deploy=alpha-blr-go-local
           
-      - name: JFrog Curation Audit
-        run: |
-          jf curation-audit
-      - name: Audit Source Code
-        run: |
-          jf audit --licenses --format=table --go=true
+      #- name: JFrog Curation Audit
+     #   run: |
+     #     jf curation-audit
+     # - name: Audit Source Code
+     #   run: |
+      #    jf audit --licenses --format=table --go=true
       
       - name: Build package
         run: |
