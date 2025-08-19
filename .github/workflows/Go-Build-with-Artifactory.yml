@@ -20,7 +20,7 @@ jobs:
     env:
       JFROG_CLI_BUILD_NAME: 'gostatsd-go'
       JFROG_CLI_BUILD_NUMBER: ${{ github.run_number }}
-      JFROG_CLI_BUILD_PROJECT: alpha
+      JFROG_CLI_BUILD_PROJECT: ${{ vars.JF_PROJECT }}
       JFROG_CLI_LOG_LEVEL: DEBUG
     runs-on: ubuntu-latest
 
@@ -36,34 +36,48 @@ jobs:
       
       - name: Setup JFrog CLI
         uses: jfrog/setup-jfrog-cli@v4
-  
+        env:
+          JF_URL: https://${{ vars.JF_URL }}/
+        with:
+          oidc-provider-name: balajils1
+          oidc-audience: balajils1
+          version: 2.76.1
           
       - name: Configure Build
         run: |
-          jf c add  --url https://adoptioneplus.jfrog.io --access-token=${{ secrets.ARTIFACTORY_ACCESS_TOKEN }}
-          jf go-config --repo-resolve=alpha-blr-go --repo-deploy=alpha-blr-go-local
+          jf go-config --repo-resolve=alpha-blr-go-local --repo-deploy=alpha-blr-go-remote
           
       #- name: JFrog Curation Audit
-     #   run: |
-     #     jf curation-audit
-     # - name: Audit Source Code
-     #   run: |
-      #    jf audit --licenses --format=table --go=true
+      #  run: |
+      #    jf curation-audit
+      #- name: Audit Source Code
+      #  run: |
+          #jf audit --go=true --sca --format=sarif
+      #    jf audit --go=true --fail=false --sast --sca --secrets --format=sarif > jfrog_sast.sarif
+      #    jf rt upload jfrog_sast.sarif grafana-plugins-generic-local/sarif-gostatd/
       
       - name: Build package
         run: |
+          go mod tidy
           jf go build --build-name=${{ env.JFROG_CLI_BUILD_NAME }} --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} --project=${{ env.JFROG_CLI_BUILD_PROJECT }}
           
       - name: Publish build with info
         run: |
-          jf go-publish v1.2.3 --build-name=${{ env.JFROG_CLI_BUILD_NAME }} --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} --project=${{ env.JFROG_CLI_BUILD_PROJECT }}
+          jf go-publish v1.0.0 --build-name=${{ env.JFROG_CLI_BUILD_NAME }} --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} --project=${{ env.JFROG_CLI_BUILD_PROJECT }}
           # Collect environment variables for the build
-          jf rt build-collect-env --project ${{ env.JFROG_CLI_BUILD_PROJECT }} ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }}  
+          #jf rt build-collect-env --project ${{ env.JFROG_CLI_BUILD_PROJECT }} ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }}  
           # Collect VCS details from Git and add them to the build
-          jf rt build-add-git --project ${{ env.JFROG_CLI_BUILD_PROJECT }} ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }}
+          #jf rt build-add-git --project ${{ env.JFROG_CLI_BUILD_PROJECT }} ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }}
           jf rt build-publish --project ${{ env.JFROG_CLI_BUILD_PROJECT }} ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }}
-      
+          sleep 20s
+        
       - name: Scan build
         run: |
-          jf build-scan --vuln --fail=false --project=${{ env.JFROG_CLI_BUILD_PROJECT }} ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }}  
+          jf build-scan --vuln --fail=false --project=${{ env.JFROG_CLI_BUILD_PROJECT }} ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }}
+          #jf build-scan ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }}
+
+      #- name: Upload output to generate autofix
+      #  uses: github/codeql-action/upload-sarif@v3
+      #  with:
+      #    sarif_file: jfrog_sast.sarif
      
