@@ -40,6 +40,7 @@ jobs:
           
       - name: Configure Build
         run: |
+          jf c add  --url https://adoptioneplus.jfrog.io --access-token=${{ secrets.ARTIFACTORY_ACCESS_TOKEN }}
           jf go-config --repo-resolve=alpha-blr-go --repo-deploy=alpha-blr-go-local
           
       - name: JFrog Curation Audit
