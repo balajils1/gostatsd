@@ -1,51 +1,55 @@
-name: Go Build gostatsd App with JFrog Artifactory
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+# JFrog SAST performs 1st party source code security analysis
+# For more information, see
+# https://docs.jfrog-applications.jfrog.io/jfrog-security-features/sast
+
+name: "JFrog SAST Scan"
 
 on:
   push:
-    branches: [ OBD-1888-remove-healthyhostcount-alarm ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ OBD-1888-remove-healthyhostcount-alarm ]
-  workflow_dispatch:
+    branches: [ "master" ]
+  schedule:
+    - cron: '34 13 * * 5'
 
-permissions:
-  actions: read           # for detecting the Github Actions environment
-  id-token: write         # for creating OIDC tokens for signing
-  packages: write         # for uploading attestations
-  contents: read          # read the contents permission
-  security-events: write  # for uploading code scanning
-
+env:
+  # [Mandatory]
+  # JFrog platform URL and access token for
+  # a JFrog platform instance with active
+  # JFrog Advanced Security subscription
+  JF_URL: ${{ secrets.JF_URL }}
+  JF_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
 jobs:
-  build:
-    name: 'Build gostatsd'
-    env:
-      JFROG_CLI_BUILD_NAME: 'gostatsd-go'
-      JFROG_CLI_BUILD_NUMBER: ${{ github.run_number }}
-      JFROG_CLI_BUILD_PROJECT: ${{ vars.JF_PROJECT }}
-      JFROG_CLI_LOG_LEVEL: DEBUG
+  analyze:
+    name: Analyze
     runs-on: ubuntu-latest
-
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          # Go version needs to be the same in: CI config, README, Dockerfiles, and Makefile
-          go-version: 1.21.4
-      
-      - name: Setup JFrog CLI
-        uses: jfrog/setup-jfrog-cli@v4
-        env:
-          JF_URL: https://${{ vars.JF_URL }}/
-        with:
-          oidc-provider-name: balajils1
-          oidc-audience: balajils1
-          version: 2.76.1
-          
-      - name: Configure Build
-        run: |
-          jf go-config --repo-resolve=alpha-blr-go-local --repo-deploy=alpha-blr-go-remote
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+
+    - name: Install and configure JFrog CLI
+      run: |
+        npm install -g jfrog-cli-v2-jf
+        echo $JF_TOKEN | jf c add --interactive=false --url=$JF_URL --access-token-stdin
+
+    - name: Run JFrog SAST
+      run: |
+        jf audit --sast --format=sarif > jfrog_sast.sarif
+        
+    - name: Configure Build
+      run: |
+        jf go-config --repo-resolve=alpha-blr-go-local --repo-deploy=alpha-blr-go-remote
           
       #- name: JFrog Curation Audit
       #  run: |
@@ -55,14 +59,13 @@ jobs:
           #jf audit --go=true --sca --format=sarif
       #    jf audit --go=true --fail=false --sast --sca --secrets --format=sarif > jfrog_sast.sarif
       #    jf rt upload jfrog_sast.sarif grafana-plugins-generic-local/sarif-gostatd/
-      
-      - name: Build package
-        run: |
+    - name: Build package
+      run: |
           go mod tidy
           jf go build --build-name=${{ env.JFROG_CLI_BUILD_NAME }} --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} --project=${{ env.JFROG_CLI_BUILD_PROJECT }}
           
-      - name: Publish build with info
-        run: |
+    - name: Publish build with info
+      run: |
           jf go-publish v1.0.0 --build-name=${{ env.JFROG_CLI_BUILD_NAME }} --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} --project=${{ env.JFROG_CLI_BUILD_PROJECT }}
           # Collect environment variables for the build
           #jf rt build-collect-env --project ${{ env.JFROG_CLI_BUILD_PROJECT }} ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }}  
@@ -71,8 +74,8 @@ jobs:
           jf rt build-publish --project ${{ env.JFROG_CLI_BUILD_PROJECT }} ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }}
           sleep 20s
         
-      - name: Scan build
-        run: |
+    - name: Scan build
+      run: |
           jf build-scan --vuln --fail=false --project=${{ env.JFROG_CLI_BUILD_PROJECT }} ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }}
           #jf build-scan ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }}
 
