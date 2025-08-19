@@ -37,12 +37,13 @@ jobs:
       - name: Setup JFrog CLI
         uses: jfrog/setup-jfrog-cli@v4
         env:
-          JF_URL: https://adoptioneplus.jfrog.io/
+           JF_URL: https://adoptioneplus.jfrog.io 
+           JF_PROJECT: alpha
         with:
-          oidc-provider-name: balajils1
-          oidc-audience: balajils1
-          version: 2.77.0
-          JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
+            oidc-provider-name: balajils1 
+            oidc-audience: balajils1
+
+          
           
       - name: Configure Build
         run: |
