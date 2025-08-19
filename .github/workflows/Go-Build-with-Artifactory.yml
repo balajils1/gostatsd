@@ -56,7 +56,7 @@ jobs:
           
       - name: Publish build with info
         run: |
-          jf go-publish v1.0.0 --build-name=${{ env.JFROG_CLI_BUILD_NAME }} --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} --project=${{ env.JFROG_CLI_BUILD_PROJECT }}
+          jf go-publish v1.2.3 --build-name=${{ env.JFROG_CLI_BUILD_NAME }} --build-number=${{ env.JFROG_CLI_BUILD_NUMBER }} --project=${{ env.JFROG_CLI_BUILD_PROJECT }}
           # Collect environment variables for the build
           jf rt build-collect-env --project ${{ env.JFROG_CLI_BUILD_PROJECT }} ${{ env.JFROG_CLI_BUILD_NAME }} ${{ env.JFROG_CLI_BUILD_NUMBER }}  
           # Collect VCS details from Git and add them to the build
